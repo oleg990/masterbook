@@ -41,6 +41,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Authentication
 	mux.HandleFunc(
 		"POST /api/v1/auth/register",
 		authHandler.Register,
@@ -51,8 +52,24 @@ func main() {
 		authHandler.Login,
 	)
 
-	mux.HandleFunc("/api/health", healthHandler)
+	// JWT middleware
+	authMiddleware := auth.AuthMiddleware(cfg.JWTSecret)
 
+	// Protected user endpoint
+	mux.Handle(
+		"GET /api/v1/me",
+		authMiddleware(
+			http.HandlerFunc(authHandler.Me),
+		),
+	)
+
+	// Health check
+	mux.HandleFunc(
+		"/api/health",
+		healthHandler,
+	)
+
+	// Readiness check
 	mux.HandleFunc("/api/ready", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{

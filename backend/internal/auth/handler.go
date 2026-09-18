@@ -218,3 +218,40 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		TokenType:   "Bearer",
 	})
 }
+
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r)
+
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{
+			"error": "user is not authenticated",
+		})
+		return
+	}
+
+	var response RegisterResponse
+
+	err := h.DB.QueryRow(
+		r.Context(),
+		`
+		SELECT id, name, email, role
+		FROM users
+		WHERE id = $1
+		`,
+		userID,
+	).Scan(
+		&response.ID,
+		&response.Name,
+		&response.Email,
+		&response.Role,
+	)
+
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{
+			"error": "user not found",
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
