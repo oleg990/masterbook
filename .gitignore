@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+
+*.log
+
+bin/
+tmp/
+
+.vscode/
+.idea/
+
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# OS
+.DS_Store
+Thumbs.db
