@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"masterbook/internal/auth"
 	"masterbook/internal/config"
 	"masterbook/internal/database"
 )
@@ -33,7 +34,22 @@ func main() {
 	}
 	defer db.Close()
 
+	authHandler := &auth.Handler{
+		DB:        db,
+		JWTSecret: cfg.JWTSecret,
+	}
+
 	mux := http.NewServeMux()
+
+	mux.HandleFunc(
+		"POST /api/v1/auth/register",
+		authHandler.Register,
+	)
+
+	mux.HandleFunc(
+		"POST /api/v1/auth/login",
+		authHandler.Login,
+	)
 
 	mux.HandleFunc("/api/health", healthHandler)
 
