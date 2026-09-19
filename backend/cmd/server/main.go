@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -21,17 +20,12 @@ import (
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-	defer stop()
-
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	ctx := context.Background()
 
 	db, err := database.NewPostgres(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -64,9 +58,13 @@ func main() {
 		DB: db,
 	}
 
+	authMiddleware := auth.AuthMiddleware(cfg.JWTSecret)
+
 	mux := http.NewServeMux()
 
-	authMiddleware := auth.AuthMiddleware(cfg.JWTSecret)
+	// -------------------------
+	// Auth
+	// -------------------------
 
 	mux.HandleFunc(
 		"POST /api/v1/auth/register",
@@ -85,6 +83,10 @@ func main() {
 		),
 	)
 
+	// -------------------------
+	// Masters
+	// -------------------------
+
 	mux.Handle(
 		"POST /api/v1/master/profile",
 		authMiddleware(
@@ -99,6 +101,16 @@ func main() {
 		),
 	)
 
+	// Публичный список мастеров
+	mux.Handle(
+		"GET /api/v1/masters",
+		http.HandlerFunc(mastersHandler.List),
+	)
+
+	// -------------------------
+	// Services
+	// -------------------------
+
 	mux.Handle(
 		"POST /api/v1/master/services",
 		authMiddleware(
@@ -111,11 +123,9 @@ func main() {
 		http.HandlerFunc(servicesHandler.List),
 	)
 
-	// Health check
-	mux.HandleFunc(
-		"/api/health",
-		healthHandler,
-	)
+	// -------------------------
+	// Schedule
+	// -------------------------
 
 	mux.Handle(
 		"PUT /api/v1/master/schedule",
@@ -128,6 +138,10 @@ func main() {
 		"GET /api/v1/masters/{masterID}/schedule",
 		http.HandlerFunc(scheduleHandler.GetWorkingHours),
 	)
+
+	// -------------------------
+	// Client appointments
+	// -------------------------
 
 	mux.Handle(
 		"POST /api/v1/appointments",
@@ -150,10 +164,18 @@ func main() {
 		),
 	)
 
+	// -------------------------
+	// Availability
+	// -------------------------
+
 	mux.Handle(
 		"GET /api/v1/masters/{masterID}/availability",
-		http.HandlerFunc(appointmentsHandler.Availability),
+		http.HandlerFunc(appointmentsHandler.GetAvailability),
 	)
+
+	// -------------------------
+	// Master appointments
+	// -------------------------
 
 	mux.Handle(
 		"GET /api/v1/master/appointments",
@@ -183,6 +205,10 @@ func main() {
 		),
 	)
 
+	// -------------------------
+	// Notifications
+	// -------------------------
+
 	mux.Handle(
 		"GET /api/v1/notifications",
 		authMiddleware(
@@ -197,21 +223,34 @@ func main() {
 		),
 	)
 
-	// Readiness check
-	mux.HandleFunc("/api/ready", func(w http.ResponseWriter, r *http.Request) {
-		if err := db.Ping(r.Context()); err != nil {
-			writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-				"status":   "not ready",
-				"database": "unavailable",
-			})
-			return
-		}
+	// -------------------------
+	// Health
+	// -------------------------
 
-		writeJSON(w, http.StatusOK, map[string]string{
-			"status":   "ready",
-			"database": "ok",
-		})
-	})
+	mux.HandleFunc(
+		"GET /api/health",
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"ok"}`))
+		},
+	)
+
+	mux.HandleFunc(
+		"GET /api/ready",
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := db.Ping(r.Context()); err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte(`{"status":"not ready"}`))
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"ready"}`))
+		},
+	)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.HTTPPort,
@@ -220,42 +259,35 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("MasterBook server started on :%s", cfg.HTTPPort)
+		log.Printf("server listening on %s", server.Addr)
 
 		if err := server.ListenAndServe(); err != nil &&
 			err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+			log.Fatal(err)
 		}
 	}()
 
-	<-ctx.Done()
+	stop := make(chan os.Signal, 1)
+
+	signal.Notify(
+		stop,
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+
+	<-stop
 
 	log.Println("shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(
 		context.Background(),
-		5*time.Second,
+		10*time.Second,
 	)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Printf("shutdown error: %v", err)
+		log.Printf("server shutdown error: %v", err)
 	}
 
 	log.Println("server stopped")
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status": "ok",
-	})
-}
-
-func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Printf("failed to write JSON response: %v", err)
-	}
 }
