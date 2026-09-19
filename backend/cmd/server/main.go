@@ -10,10 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"masterbook/internal/appointments"
 	"masterbook/internal/auth"
 	"masterbook/internal/config"
 	"masterbook/internal/database"
 	"masterbook/internal/masters"
+	"masterbook/internal/schedule"
 	"masterbook/internal/services"
 )
 
@@ -46,6 +48,14 @@ func main() {
 	}
 
 	servicesHandler := &services.Handler{
+		DB: db,
+	}
+
+	scheduleHandler := &schedule.Handler{
+		DB: db,
+	}
+
+	appointmentsHandler := &appointments.Handler{
 		DB: db,
 	}
 
@@ -100,6 +110,39 @@ func main() {
 	mux.HandleFunc(
 		"/api/health",
 		healthHandler,
+	)
+
+	mux.Handle(
+		"PUT /api/v1/master/schedule",
+		authMiddleware(
+			http.HandlerFunc(scheduleHandler.SetWorkingHour),
+		),
+	)
+
+	mux.Handle(
+		"GET /api/v1/masters/{masterID}/schedule",
+		http.HandlerFunc(scheduleHandler.GetWorkingHours),
+	)
+
+	mux.Handle(
+		"POST /api/v1/appointments",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.Create),
+		),
+	)
+
+	mux.Handle(
+		"GET /api/v1/appointments",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.ListMine),
+		),
+	)
+
+	mux.Handle(
+		"PATCH /api/v1/appointments/{id}/cancel",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.Cancel),
+		),
 	)
 
 	// Readiness check
