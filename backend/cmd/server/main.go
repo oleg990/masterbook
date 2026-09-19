@@ -15,6 +15,7 @@ import (
 	"masterbook/internal/config"
 	"masterbook/internal/database"
 	"masterbook/internal/masters"
+	"masterbook/internal/notifications"
 	"masterbook/internal/schedule"
 	"masterbook/internal/services"
 )
@@ -56,6 +57,10 @@ func main() {
 	}
 
 	appointmentsHandler := &appointments.Handler{
+		DB: db,
+	}
+
+	notificationsHandler := &notifications.Handler{
 		DB: db,
 	}
 
@@ -142,6 +147,53 @@ func main() {
 		"PATCH /api/v1/appointments/{id}/cancel",
 		authMiddleware(
 			http.HandlerFunc(appointmentsHandler.Cancel),
+		),
+	)
+
+	mux.Handle(
+		"GET /api/v1/masters/{masterID}/availability",
+		http.HandlerFunc(appointmentsHandler.Availability),
+	)
+
+	mux.Handle(
+		"GET /api/v1/master/appointments",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.ListMasterAppointments),
+		),
+	)
+
+	mux.Handle(
+		"PATCH /api/v1/master/appointments/{id}/confirm",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.Confirm),
+		),
+	)
+
+	mux.Handle(
+		"PATCH /api/v1/master/appointments/{id}/complete",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.Complete),
+		),
+	)
+
+	mux.Handle(
+		"PATCH /api/v1/master/appointments/{id}/cancel",
+		authMiddleware(
+			http.HandlerFunc(appointmentsHandler.CancelByMaster),
+		),
+	)
+
+	mux.Handle(
+		"GET /api/v1/notifications",
+		authMiddleware(
+			http.HandlerFunc(notificationsHandler.List),
+		),
+	)
+
+	mux.Handle(
+		"PATCH /api/v1/notifications/{id}/read",
+		authMiddleware(
+			http.HandlerFunc(notificationsHandler.MarkAsRead),
 		),
 	)
 
