@@ -14,6 +14,7 @@ import (
 	"masterbook/internal/config"
 	"masterbook/internal/database"
 	"masterbook/internal/masters"
+	"masterbook/internal/services"
 )
 
 func main() {
@@ -41,6 +42,10 @@ func main() {
 	}
 
 	mastersHandler := &masters.Handler{
+		DB: db,
+	}
+
+	servicesHandler := &services.Handler{
 		DB: db,
 	}
 
@@ -77,6 +82,18 @@ func main() {
 		authMiddleware(
 			http.HandlerFunc(mastersHandler.GetProfile),
 		),
+	)
+
+	mux.Handle(
+		"POST /api/v1/master/services",
+		authMiddleware(
+			http.HandlerFunc(servicesHandler.Create),
+		),
+	)
+
+	mux.Handle(
+		"GET /api/v1/masters/{masterID}/services",
+		http.HandlerFunc(servicesHandler.List),
 	)
 
 	// Health check
