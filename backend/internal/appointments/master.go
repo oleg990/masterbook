@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"masterbook/internal/auth"
+	"masterbook/internal/notifications"
 )
 
 type MasterAppointmentResponse struct {
@@ -22,8 +23,9 @@ type MasterAppointmentResponse struct {
 
 // GET /api/v1/master/appointments
 func (h *Handler) ListMasterAppointments(w http.ResponseWriter, r *http.Request) {
-	userIDString, ok := auth.GetUserID(r)
-	if !ok {
+	userIDString := auth.GetUserID(r)
+
+	if userIDString == "" {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{
 			"error": "user is not authenticated",
 		})
@@ -150,8 +152,9 @@ func (h *Handler) changeStatus(
 	newStatus string,
 	statusCondition string,
 ) {
-	userIDString, ok := auth.GetUserID(r)
-	if !ok {
+	userIDString := auth.GetUserID(r)
+
+	if userIDString == "" {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{
 			"error": "user is not authenticated",
 		})
@@ -188,10 +191,13 @@ func (h *Handler) changeStatus(
 		  AND a.master_id = mp.id
 		  AND mp.user_id = $3
 		` + statusCondition + `
-		RETURNING a.status
+		RETURNING a.status, a.client_id
 	`
 
-	var status string
+	var (
+		status   string
+		clientID int64
+	)
 
 	err = h.DB.QueryRow(
 		r.Context(),
@@ -199,7 +205,7 @@ func (h *Handler) changeStatus(
 		newStatus,
 		appointmentID,
 		userID,
-	).Scan(&status)
+	).Scan(&status, &clientID)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -213,6 +219,27 @@ func (h *Handler) changeStatus(
 			"error": "failed to change appointment status",
 		})
 		return
+	}
+
+	// Отправляем уведомление клиенту после успешного изменения статуса.
+	switch newStatus {
+	case "confirmed":
+		_ = notifications.Create(
+			h.DB,
+			clientID,
+			"Запись подтверждена",
+			"Мастер подтвердил вашу запись.",
+			"appointment_confirmed",
+		)
+
+	case "cancelled":
+		_ = notifications.Create(
+			h.DB,
+			clientID,
+			"Запись отменена",
+			"Мастер отменил вашу запись.",
+			"appointment_cancelled",
+		)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{

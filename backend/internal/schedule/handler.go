@@ -29,8 +29,9 @@ type WorkingHourResponse struct {
 }
 
 func (h *Handler) SetWorkingHour(w http.ResponseWriter, r *http.Request) {
-	userIDString, ok := auth.GetUserID(r)
-	if !ok {
+	userIDString := auth.GetUserID(r)
+
+	if userIDString == "" {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{
 			"error": "user is not authenticated",
 		})

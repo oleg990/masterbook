@@ -74,10 +74,16 @@ func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 	}
 }
 
-func GetUserID(r *http.Request) (string, bool) {
+func GetUserID(r *http.Request) string {
 	value := r.Context().Value(userIDKey)
+	if value == nil {
+		return ""
+	}
 
 	userID, ok := value.(string)
+	if !ok {
+		return ""
+	}
 
-	return userID, ok
+	return userID
 }

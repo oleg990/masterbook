@@ -220,14 +220,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
-	userID, ok := GetUserID(r)
+	userID := GetUserID(r)
 
-	if !ok {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{
-			"error": "user is not authenticated",
-		})
-		return
-	}
+if userID == "" {
+	writeJSON(w, http.StatusUnauthorized, map[string]string{
+		"error": "user is not authenticated",
+	})
+	return
+}
 
 	var response RegisterResponse
 
