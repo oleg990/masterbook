@@ -13,6 +13,7 @@ import (
 	"masterbook/internal/auth"
 	"masterbook/internal/config"
 	"masterbook/internal/database"
+	"masterbook/internal/masters"
 )
 
 func main() {
@@ -39,9 +40,14 @@ func main() {
 		JWTSecret: cfg.JWTSecret,
 	}
 
+	mastersHandler := &masters.Handler{
+		DB: db,
+	}
+
 	mux := http.NewServeMux()
 
-	// Authentication
+	authMiddleware := auth.AuthMiddleware(cfg.JWTSecret)
+
 	mux.HandleFunc(
 		"POST /api/v1/auth/register",
 		authHandler.Register,
@@ -52,14 +58,24 @@ func main() {
 		authHandler.Login,
 	)
 
-	// JWT middleware
-	authMiddleware := auth.AuthMiddleware(cfg.JWTSecret)
-
-	// Protected user endpoint
 	mux.Handle(
 		"GET /api/v1/me",
 		authMiddleware(
 			http.HandlerFunc(authHandler.Me),
+		),
+	)
+
+	mux.Handle(
+		"POST /api/v1/master/profile",
+		authMiddleware(
+			http.HandlerFunc(mastersHandler.CreateProfile),
+		),
+	)
+
+	mux.Handle(
+		"GET /api/v1/master/profile",
+		authMiddleware(
+			http.HandlerFunc(mastersHandler.GetProfile),
 		),
 	)
 
