@@ -38,219 +38,76 @@ func main() {
 		JWTSecret: cfg.JWTSecret,
 	}
 
-	mastersHandler := &masters.Handler{
-		DB: db,
-	}
-
-	servicesHandler := &services.Handler{
-		DB: db,
-	}
-
-	scheduleHandler := &schedule.Handler{
-		DB: db,
-	}
-
-	appointmentsHandler := &appointments.Handler{
-		DB: db,
-	}
-
-	notificationsHandler := &notifications.Handler{
-		DB: db,
-	}
+	mastersHandler := &masters.Handler{DB: db}
+	servicesHandler := &services.Handler{DB: db}
+	scheduleHandler := &schedule.Handler{DB: db}
+	appointmentsHandler := &appointments.Handler{DB: db}
+	notificationsHandler := &notifications.Handler{DB: db}
 
 	authMiddleware := auth.AuthMiddleware(cfg.JWTSecret)
 
 	mux := http.NewServeMux()
 
-	// -------------------------
 	// Auth
-	// -------------------------
+	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
+	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
+	mux.Handle("GET /api/v1/me", authMiddleware(http.HandlerFunc(authHandler.Me)))
 
-	mux.HandleFunc(
-		"POST /api/v1/auth/register",
-		authHandler.Register,
-	)
-
-	mux.HandleFunc(
-		"POST /api/v1/auth/login",
-		authHandler.Login,
-	)
-
-	mux.Handle(
-		"GET /api/v1/me",
-		authMiddleware(
-			http.HandlerFunc(authHandler.Me),
-		),
-	)
-
-	// -------------------------
 	// Masters
-	// -------------------------
+	mux.Handle("POST /api/v1/master/profile", authMiddleware(http.HandlerFunc(mastersHandler.CreateProfile)))
+	mux.Handle("GET /api/v1/master/profile", authMiddleware(http.HandlerFunc(mastersHandler.GetProfile)))
+	mux.Handle("GET /api/v1/masters", http.HandlerFunc(mastersHandler.List))
 
-	mux.Handle(
-		"POST /api/v1/master/profile",
-		authMiddleware(
-			http.HandlerFunc(mastersHandler.CreateProfile),
-		),
-	)
-
-	mux.Handle(
-		"GET /api/v1/master/profile",
-		authMiddleware(
-			http.HandlerFunc(mastersHandler.GetProfile),
-		),
-	)
-
-	// Публичный список мастеров
-	mux.Handle(
-		"GET /api/v1/masters",
-		http.HandlerFunc(mastersHandler.List),
-	)
-
-	// -------------------------
 	// Services
-	// -------------------------
+	mux.Handle("POST /api/v1/master/services", authMiddleware(http.HandlerFunc(servicesHandler.Create)))
+	mux.Handle("GET /api/v1/masters/{masterID}/services", http.HandlerFunc(servicesHandler.List))
 
-	mux.Handle(
-		"POST /api/v1/master/services",
-		authMiddleware(
-			http.HandlerFunc(servicesHandler.Create),
-		),
-	)
-
-	mux.Handle(
-		"GET /api/v1/masters/{masterID}/services",
-		http.HandlerFunc(servicesHandler.List),
-	)
-
-	// -------------------------
 	// Schedule
-	// -------------------------
+	mux.Handle("PUT /api/v1/master/schedule", authMiddleware(http.HandlerFunc(scheduleHandler.SetWorkingHour)))
+	mux.Handle("GET /api/v1/masters/{masterID}/schedule", http.HandlerFunc(scheduleHandler.GetWorkingHours))
 
-	mux.Handle(
-		"PUT /api/v1/master/schedule",
-		authMiddleware(
-			http.HandlerFunc(scheduleHandler.SetWorkingHour),
-		),
-	)
-
-	mux.Handle(
-		"GET /api/v1/masters/{masterID}/schedule",
-		http.HandlerFunc(scheduleHandler.GetWorkingHours),
-	)
-
-	// -------------------------
 	// Client appointments
-	// -------------------------
+	mux.Handle("POST /api/v1/appointments", authMiddleware(http.HandlerFunc(appointmentsHandler.Create)))
+	mux.Handle("GET /api/v1/appointments", authMiddleware(http.HandlerFunc(appointmentsHandler.ListMine)))
+	mux.Handle("PATCH /api/v1/appointments/{id}/cancel", authMiddleware(http.HandlerFunc(appointmentsHandler.Cancel)))
 
-	mux.Handle(
-		"POST /api/v1/appointments",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.Create),
-		),
-	)
-
-	mux.Handle(
-		"GET /api/v1/appointments",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.ListMine),
-		),
-	)
-
-	mux.Handle(
-		"PATCH /api/v1/appointments/{id}/cancel",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.Cancel),
-		),
-	)
-
-	// -------------------------
 	// Availability
-	// -------------------------
+	mux.Handle("GET /api/v1/masters/{masterID}/availability", http.HandlerFunc(appointmentsHandler.GetAvailability))
 
-	mux.Handle(
-		"GET /api/v1/masters/{masterID}/availability",
-		http.HandlerFunc(appointmentsHandler.GetAvailability),
-	)
-
-	// -------------------------
 	// Master appointments
-	// -------------------------
+	mux.Handle("GET /api/v1/master/appointments", authMiddleware(http.HandlerFunc(appointmentsHandler.ListMasterAppointments)))
+	mux.Handle("PATCH /api/v1/master/appointments/{id}/confirm", authMiddleware(http.HandlerFunc(appointmentsHandler.Confirm)))
+	mux.Handle("PATCH /api/v1/master/appointments/{id}/complete", authMiddleware(http.HandlerFunc(appointmentsHandler.Complete)))
+	mux.Handle("PATCH /api/v1/master/appointments/{id}/cancel", authMiddleware(http.HandlerFunc(appointmentsHandler.CancelByMaster)))
 
-	mux.Handle(
-		"GET /api/v1/master/appointments",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.ListMasterAppointments),
-		),
-	)
-
-	mux.Handle(
-		"PATCH /api/v1/master/appointments/{id}/confirm",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.Confirm),
-		),
-	)
-
-	mux.Handle(
-		"PATCH /api/v1/master/appointments/{id}/complete",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.Complete),
-		),
-	)
-
-	mux.Handle(
-		"PATCH /api/v1/master/appointments/{id}/cancel",
-		authMiddleware(
-			http.HandlerFunc(appointmentsHandler.CancelByMaster),
-		),
-	)
-
-	// -------------------------
 	// Notifications
-	// -------------------------
+	mux.Handle("GET /api/v1/notifications", authMiddleware(http.HandlerFunc(notificationsHandler.List)))
+	mux.Handle("PATCH /api/v1/notifications/{id}/read", authMiddleware(http.HandlerFunc(notificationsHandler.MarkAsRead)))
 
-	mux.Handle(
-		"GET /api/v1/notifications",
-		authMiddleware(
-			http.HandlerFunc(notificationsHandler.List),
-		),
-	)
-
-	mux.Handle(
-		"PATCH /api/v1/notifications/{id}/read",
-		authMiddleware(
-			http.HandlerFunc(notificationsHandler.MarkAsRead),
-		),
-	)
-
-	// -------------------------
 	// Health
-	// -------------------------
+	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
 
-	mux.HandleFunc(
-		"GET /api/health",
-		func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/ready", func(w http.ResponseWriter, r *http.Request) {
+		if err := db.Ping(r.Context()); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"status":"ok"}`))
-		},
-	)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"not ready"}`))
+			return
+		}
 
-	mux.HandleFunc(
-		"GET /api/ready",
-		func(w http.ResponseWriter, r *http.Request) {
-			if err := db.Ping(r.Context()); err != nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusServiceUnavailable)
-				_, _ = w.Write([]byte(`{"status":"not ready"}`))
-				return
-			}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ready"}`))
+	})
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"status":"ready"}`))
-		},
-	)
+	// Website
+	fileServer := http.FileServer(http.Dir("web"))
+	mux.Handle("GET /web/", fileServer)
+	mux.Handle("GET /", fileServer)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.HTTPPort,
@@ -268,13 +125,7 @@ func main() {
 	}()
 
 	stop := make(chan os.Signal, 1)
-
-	signal.Notify(
-		stop,
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
 	log.Println("shutting down server...")
