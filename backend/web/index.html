@@ -68,7 +68,8 @@
     <div id="masterList" class="list"></div>
   </div>
 </section>
-\n<section id="notifications" class="section wrap">
+
+<section id="notifications" class="section wrap">
   <div class="section-head"><div><div class="eyebrow">события</div><h2>Уведомления</h2></div></div>
   <div id="notificationsList" class="list"></div>
 </section>
@@ -106,7 +107,8 @@ function modal(id,on=true){$(id).classList.toggle("hidden",!on)}
 function authTab(tab){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));$("loginForm").classList.toggle("hidden",tab!=="login");$("registerForm").classList.toggle("hidden",tab!=="register");$("authTitle").textContent=tab==="login"?"Вход в MasterBook":"Создание аккаунта"}
 function session(token,user){state.token=token||"";state.user=user||null;if(token)localStorage.setItem("mb_token",token);else localStorage.removeItem("mb_token");if(user)localStorage.setItem("mb_user",JSON.stringify(user));else localStorage.removeItem("mb_user");renderHeader()}
 function logout(){session("",null);renderAppointments();renderNotifications();toast("Вы вышли из аккаунта")}
-function renderHeader(){const ok=!!(state.token&&state.user);$("login").classList.toggle("hidden",ok);$("heroAuth").classList.toggle("hidden",ok);$("logout").classList.toggle("hidden",!ok);$("user").classList.toggle("hidden",!ok);$("user").textContent=ok?state.user.name:"";$("appointmentHint").textContent=ok?"История ваших записей с текущим статусом.":"Войдите, чтобы увидеть записи.";\n$("masterPanel").classList.toggle("hidden",!(ok&&state.user.role==="master"));}
+function renderHeader(){const ok=!!(state.token&&state.user);$("login").classList.toggle("hidden",ok);$("heroAuth").classList.toggle("hidden",ok);$("logout").classList.toggle("hidden",!ok);$("user").classList.toggle("hidden",!ok);$("user").textContent=ok?state.user.name:"";$("appointmentHint").textContent=ok?"История ваших записей с текущим статусом.":"Войдите, чтобы увидеть записи.";
+$("masterPanel").classList.toggle("hidden",!(ok&&state.user.role==="master"));}
 async function restore(){if(!state.token)return;try{const u=await api("/me");session(state.token,u)}catch{logout()}}
 async function loadMasters(){const g=$("mastersGrid");g.innerHTML='<div class="loading">Загрузка мастеров…</div>';try{const ms=await api("/masters");state.masters=await Promise.all(ms.map(async m=>({...m,services:await api("/masters/"+m.id+"/services")})));if(!state.masters.length){g.innerHTML='<div class="empty">Мастеров пока нет.</div>';return}g.innerHTML=state.masters.map(m=>`<article class="master"><div class="master-head"><div class="avatar">${initials(m.name)}</div><div><div class="master-name">${esc(m.name)}</div><div class="muted">${esc(m.description||"Мастер")}</div></div></div>${m.services.map(s=>`<div class="service"><div><strong>${esc(s.name)}</strong><small>${s.duration_minutes} мин · ${money(s.price)}</small></div><button class="btn outline" data-master="${m.id}" data-service="${s.id}">Выбрать</button></div>`).join("")}</article>`).join("")}catch(e){g.innerHTML='<div class="loading">Не удалось загрузить мастеров.</div>';toast(e.message)}}
 function today(){const d=new Date();return d.toISOString().slice(0,10)}
