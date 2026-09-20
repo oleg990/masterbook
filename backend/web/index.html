@@ -58,7 +58,17 @@
   <div id="appointmentsList" class="list"></div></div>
 </section>
 
-<section id="notifications" class="section wrap">
+
+<section id="masterPanel" class="section soft hidden">
+  <div class="wrap">
+    <div class="section-head">
+      <div><div class="eyebrow">кабинет мастера</div><h2>Записи клиентов</h2></div>
+      <button id="refreshMaster" class="btn outline">Обновить</button>
+    </div>
+    <div id="masterList" class="list"></div>
+  </div>
+</section>
+\n<section id="notifications" class="section wrap">
   <div class="section-head"><div><div class="eyebrow">события</div><h2>Уведомления</h2></div></div>
   <div id="notificationsList" class="list"></div>
 </section>
@@ -96,7 +106,7 @@ function modal(id,on=true){$(id).classList.toggle("hidden",!on)}
 function authTab(tab){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));$("loginForm").classList.toggle("hidden",tab!=="login");$("registerForm").classList.toggle("hidden",tab!=="register");$("authTitle").textContent=tab==="login"?"Вход в MasterBook":"Создание аккаунта"}
 function session(token,user){state.token=token||"";state.user=user||null;if(token)localStorage.setItem("mb_token",token);else localStorage.removeItem("mb_token");if(user)localStorage.setItem("mb_user",JSON.stringify(user));else localStorage.removeItem("mb_user");renderHeader()}
 function logout(){session("",null);renderAppointments();renderNotifications();toast("Вы вышли из аккаунта")}
-function renderHeader(){const ok=!!(state.token&&state.user);$("login").classList.toggle("hidden",ok);$("heroAuth").classList.toggle("hidden",ok);$("logout").classList.toggle("hidden",!ok);$("user").classList.toggle("hidden",!ok);$("user").textContent=ok?state.user.name:"";$("appointmentHint").textContent=ok?"История ваших записей с текущим статусом.":"Войдите, чтобы увидеть записи."}
+function renderHeader(){const ok=!!(state.token&&state.user);$("login").classList.toggle("hidden",ok);$("heroAuth").classList.toggle("hidden",ok);$("logout").classList.toggle("hidden",!ok);$("user").classList.toggle("hidden",!ok);$("user").textContent=ok?state.user.name:"";$("appointmentHint").textContent=ok?"История ваших записей с текущим статусом.":"Войдите, чтобы увидеть записи.";\n$("masterPanel").classList.toggle("hidden",!(ok&&state.user.role==="master"));}
 async function restore(){if(!state.token)return;try{const u=await api("/me");session(state.token,u)}catch{logout()}}
 async function loadMasters(){const g=$("mastersGrid");g.innerHTML='<div class="loading">Загрузка мастеров…</div>';try{const ms=await api("/masters");state.masters=await Promise.all(ms.map(async m=>({...m,services:await api("/masters/"+m.id+"/services")})));if(!state.masters.length){g.innerHTML='<div class="empty">Мастеров пока нет.</div>';return}g.innerHTML=state.masters.map(m=>`<article class="master"><div class="master-head"><div class="avatar">${initials(m.name)}</div><div><div class="master-name">${esc(m.name)}</div><div class="muted">${esc(m.description||"Мастер")}</div></div></div>${m.services.map(s=>`<div class="service"><div><strong>${esc(s.name)}</strong><small>${s.duration_minutes} мин · ${money(s.price)}</small></div><button class="btn outline" data-master="${m.id}" data-service="${s.id}">Выбрать</button></div>`).join("")}</article>`).join("")}catch(e){g.innerHTML='<div class="loading">Не удалось загрузить мастеров.</div>';toast(e.message)}}
 function today(){const d=new Date();return d.toISOString().slice(0,10)}
@@ -105,19 +115,50 @@ async function loadSlots(){if(!state.booking)return;state.slot=null;$("book").di
 async function book(){if(!state.slot||!state.booking)return;$("book").disabled=true;try{await api("/appointments",{method:"POST",body:JSON.stringify({master_id:Number(state.booking.m.id),service_id:Number(state.booking.s.id),start_time:state.slot})});modal("bookingModal",false);toast("Запись создана");await Promise.all([renderAppointments(),renderNotifications()]);location.hash="appointments"}catch(e){$("bookingError").textContent=e.message}finally{$("book").disabled=!state.slot}}
 async function renderAppointments(){const box=$("appointmentsList");if(!state.token){box.innerHTML='<div class="empty">Войдите в аккаунт, чтобы увидеть записи.</div>';return}try{const a=await api("/appointments");if(!a.length){box.innerHTML='<div class="empty">Записей пока нет.</div>';return}box.innerHTML=a.map(x=>`<article class="item"><div class="item-row"><div><strong>${esc(x.service_name)}</strong><div class="muted">${esc(x.master_name)} · ${fmt(x.start_time)}</div></div><span class="status ${esc(x.status)}">${status(x.status)}</span></div>${["pending","confirmed"].includes(x.status)?`<button class="btn outline" style="margin-top:12px" data-cancel="${x.id}">Отменить</button>`:""}</article>`).join("")}catch(e){box.innerHTML='<div class="empty">Не удалось загрузить записи.</div>'}}
 async function cancel(id){if(!confirm("Отменить запись?"))return;try{await api("/appointments/"+id+"/cancel",{method:"PATCH"});toast("Запись отменена");await renderAppointments()}catch(e){toast(e.message)}}
+async function renderMasterAppointments(){
+  const panel=$("masterPanel"),box=$("masterList");
+  if(!(state.token&&state.user&&state.user.role==="master")){panel.classList.add("hidden");return}
+  panel.classList.remove("hidden");
+  box.innerHTML='<div class="empty">Загрузка записей…</div>';
+  try{
+    const items=await api("/master/appointments");
+    if(!items.length){box.innerHTML='<div class="empty">Новых записей нет.</div>';return}
+    box.innerHTML=items.map(x=>`<article class="item">
+      <div class="item-row">
+        <div>
+          <strong>${esc(x.service_name)}</strong>
+          <div class="muted">${esc(x.client_name)} · ${esc(x.client_email)}</div>
+          <div class="muted">${fmt(x.start_time)}</div>
+        </div>
+        <span class="status ${esc(x.status)}">${status(x.status)}</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        ${x.status==="pending"?`<button class="btn primary" data-master-action="confirm" data-id="${x.id}">Подтвердить</button><button class="btn outline" data-master-action="cancel" data-id="${x.id}">Отменить</button>`:""}
+        ${x.status==="confirmed"?`<button class="btn dark" data-master-action="complete" data-id="${x.id}">Завершить</button><button class="btn outline" data-master-action="cancel" data-id="${x.id}">Отменить</button>`:""}
+      </div>
+    </article>`).join("")
+  }catch(e){box.innerHTML='<div class="empty">Не удалось загрузить записи.</div>';toast(e.message)}
+}
+async function masterAction(action,id){
+  try{
+    await api("/master/appointments/"+id+"/"+action,{method:"PATCH"});
+    toast(action==="confirm"?"Запись подтверждена":action==="complete"?"Запись завершена":"Запись отменена");
+    await Promise.all([renderMasterAppointments(),renderNotifications(),renderAppointments()]);
+  }catch(e){toast(e.message)}
+}
 async function renderNotifications(){const box=$("notificationsList");if(!state.token){box.innerHTML='<div class="empty">Войдите, чтобы увидеть уведомления.</div>';return}try{const n=await api("/notifications");if(!n.length){box.innerHTML='<div class="empty">Уведомлений нет.</div>';return}box.innerHTML=n.map(x=>`<article class="item" style="${x.is_read?"":"border-color:#efb1a8"}"><div class="item-row"><div><strong>${esc(x.title)}</strong><div class="muted">${fmt(x.created_at)}</div></div></div><p>${esc(x.message)}</p>${x.is_read?"":`<button class="btn outline" data-read="${x.id}">Отметить прочитанным</button>`}</article>`).join("")}catch(e){box.innerHTML='<div class="empty">Не удалось загрузить уведомления.</div>'}}
 async function read(id){try{await api("/notifications/"+id+"/read",{method:"PATCH"});renderNotifications()}catch(e){toast(e.message)}}
 async function me(token){const r=await fetch("/api/v1/me",{headers:{Authorization:"Bearer "+token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Ошибка профиля");return d}
-async function doLogin(email,password){const d=await api("/auth/login",{method:"POST",body:JSON.stringify({email,password})});session(d.access_token,await me(d.access_token));modal("authModal",false);toast("Вход выполнен");renderAppointments();renderNotifications()}
+async function doLogin(email,password){const d=await api("/auth/login",{method:"POST",body:JSON.stringify({email,password})});session(d.access_token,await me(d.access_token));modal("authModal",false);toast("Вход выполнен");renderAppointments();renderNotifications();renderMasterAppointments()}
 async function doRegister(name,email,password){await api("/auth/register",{method:"POST",body:JSON.stringify({name,email,password})});await doLogin(email,password)}
 
-document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.close!==undefined){modal("authModal",false);modal("bookingModal",false)}if(b.id==="login"||b.id==="heroAuth"){authTab("login");modal("authModal")}if(b.id==="logout")logout();if(b.dataset.tab)authTab(b.dataset.tab);if(b.id==="refresh")loadMasters();if(b.dataset.master)openBooking(b.dataset.master,b.dataset.service);if(b.dataset.slot){document.querySelectorAll(".slot").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");state.slot=b.dataset.slot;$("book").disabled=false}if(b.dataset.cancel)cancel(b.dataset.cancel);if(b.dataset.read)read(b.dataset.read);});
+document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.close!==undefined){modal("authModal",false);modal("bookingModal",false)}if(b.id==="login"||b.id==="heroAuth"){authTab("login");modal("authModal")}if(b.id==="logout")logout();if(b.dataset.tab)authTab(b.dataset.tab);if(b.id==="refresh")loadMasters();if(b.dataset.master)openBooking(b.dataset.master,b.dataset.service);if(b.dataset.slot){document.querySelectorAll(".slot").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");state.slot=b.dataset.slot;$("book").disabled=false}if(b.dataset.cancel)cancel(b.dataset.cancel);if(b.dataset.read)read(b.dataset.read);if(b.dataset.masterAction)masterAction(b.dataset.masterAction,b.dataset.id);if(b.id==="refreshMaster")renderMasterAppointments();});
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginError").textContent="";const f=new FormData(e.currentTarget);try{await doLogin(String(f.get("email")),String(f.get("password")));e.currentTarget.reset()}catch(x){$("loginError").textContent=x.message}});
 $("registerForm").addEventListener("submit",async e=>{e.preventDefault();$("registerError").textContent="";const f=new FormData(e.currentTarget);try{await doRegister(String(f.get("name")),String(f.get("email")),String(f.get("password")));e.currentTarget.reset()}catch(x){$("registerError").textContent=x.message}});
 $("bDate").addEventListener("change",loadSlots);$("book").addEventListener("click",book);
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){modal("authModal",false);modal("bookingModal",false)}});
 
-(async()=>{renderHeader();await restore();await loadMasters();await Promise.all([renderAppointments(),renderNotifications()])})();
+(async()=>{renderHeader();await restore();await loadMasters();await Promise.all([renderAppointments(),renderNotifications(),renderMasterAppointments()])})();
 </script>
 </body>
 </html>
