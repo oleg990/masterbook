@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'master_screen.dart';
 import 'notifications_screen.dart';
 
-const String baseUrl = 'http://localhost:8080';
+const String baseUrl = 'http://103.118.208.191:8080';
 
 void main() {
   runApp(const MasterBookApp());
@@ -1478,8 +1478,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       if (response.statusCode == 200) {
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Запись отменена')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Запись отменена')));
 
         await loadAppointments();
         return;
