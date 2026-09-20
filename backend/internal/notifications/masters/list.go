@@ -24,7 +24,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		ORDER BY u.name
 		`,
 	)
-
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
 			"error": "failed to get masters",

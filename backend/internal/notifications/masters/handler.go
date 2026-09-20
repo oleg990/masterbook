@@ -15,17 +15,17 @@ type Handler struct {
 	DB *pgxpool.Pool
 }
 
-type ProfileRequest struct {
-	Description string  `json:"description"`
-	PhotoURL    *string `json:"photo_url"`
+type CreateProfileRequest struct {
+	Description string `json:"description"`
+	PhotoURL    string `json:"photo_url"`
 }
 
 type ProfileResponse struct {
-	ID          int64   `json:"id"`
-	UserID      int64   `json:"user_id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	PhotoURL    *string `json:"photo_url"`
+	ID          int64  `json:"id"`
+	UserID      int64  `json:"user_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	PhotoURL    string `json:"photo_url,omitempty"`
 }
 
 func (h *Handler) CreateProfile(w http.ResponseWriter, r *http.Request) {
@@ -70,12 +70,12 @@ func (h *Handler) CreateProfile(w http.ResponseWriter, r *http.Request) {
 
 	if role != "master" {
 		writeJSON(w, http.StatusForbidden, map[string]string{
-			"error": "only master can create profile",
+			"error": "only master can create a master profile",
 		})
 		return
 	}
 
-	var req ProfileRequest
+	var req CreateProfileRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{
@@ -95,36 +95,43 @@ func (h *Handler) CreateProfile(w http.ResponseWriter, r *http.Request) {
 			photo_url
 		)
 		VALUES ($1, $2, $3)
-		RETURNING id, user_id, description, photo_url
+		RETURNING id
 		`,
 		userID,
 		req.Description,
 		req.PhotoURL,
+	).Scan(&response.ID)
+
+	if err != nil {
+		writeJSON(w, http.StatusConflict, map[string]string{
+			"error": "master profile already exists",
+		})
+		return
+	}
+
+	response.UserID = userID
+
+	err = h.DB.QueryRow(
+		r.Context(),
+		`
+		SELECT
+			u.name,
+			mp.description,
+			mp.photo_url
+		FROM master_profiles mp
+		JOIN users u ON u.id = mp.user_id
+		WHERE mp.id = $1
+		`,
+		response.ID,
 	).Scan(
-		&response.ID,
-		&response.UserID,
+		&response.Name,
 		&response.Description,
 		&response.PhotoURL,
 	)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
-			"error": "failed to create master profile",
-		})
-		return
-	}
-
-	response.Name = ""
-
-	err = h.DB.QueryRow(
-		r.Context(),
-		`SELECT name FROM users WHERE id = $1`,
-		userID,
-	).Scan(&response.Name)
-
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{
-			"error": "failed to get master name",
+			"error": "failed to get created profile",
 		})
 		return
 	}
@@ -191,7 +198,7 @@ func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, response)
 }
 
-func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
