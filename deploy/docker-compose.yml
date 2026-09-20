@@ -3,15 +3,29 @@ services:
     image: postgres:16-alpine
     container_name: masterbook-postgres
     restart: unless-stopped
-
     environment:
       POSTGRES_DB: masterbook
       POSTGRES_USER: masterbook
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
     volumes:
       - masterbook-postgres-data:/var/lib/postgresql/data
+    networks:
+      - masterbook-network
 
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: masterbook-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      HTTP_PORT: 8080
+      DATABASE_URL: postgres://masterbook:${POSTGRES_PASSWORD}@postgres:5432/masterbook?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8080:8080"
     networks:
       - masterbook-network
 
