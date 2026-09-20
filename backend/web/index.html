@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f26d5b">
+<title>MasterBook — онлайн-запись</title>
+<style>
+:root{--bg:#fcf8f5;--card:#fff;--ink:#27211f;--muted:#7b716b;--line:#eadfd7;--accent:#f26d5b;--accent2:#dc5647;--dark:#29231f;--soft:#f4ece6;--shadow:0 18px 50px rgba(48,35,27,.09)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5}button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}
+.wrap{width:min(1120px,calc(100% - 32px));margin:auto}.header{position:sticky;top:0;z-index:30;background:rgba(252,248,245,.88);backdrop-filter:blur(15px);border-bottom:1px solid var(--line)}.header-inner{height:68px;display:flex;align-items:center;gap:28px}.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}.logo{width:34px;height:34px;border-radius:12px;background:var(--dark);color:#fff;display:grid;place-items:center}.nav{display:flex;gap:22px;color:var(--muted);font-size:14px}.nav a:hover{color:var(--ink)}.header-actions{margin-left:auto;display:flex;align-items:center;gap:10px}.user{font-size:14px;color:var(--muted)}
+.btn{border:0;border-radius:14px;padding:11px 17px;font-weight:750;display:inline-flex;justify-content:center;align-items:center;gap:7px;transition:.18s}.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent2)}.outline{background:transparent;border:1px solid var(--line)}.outline:hover{background:#fff}.dark{background:var(--dark);color:#fff}.ghost{background:transparent}.wide{width:100%}.hidden{display:none!important}
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:70px;align-items:center;padding:76px 0 64px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}h1{font-size:clamp(44px,6vw,72px);line-height:1.02;letter-spacing:-.055em;margin:14px 0 20px}.hero h1 span{color:var(--accent)}.lead{font-size:19px;color:var(--muted);max-width:620px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0}.checks{display:flex;gap:15px;flex-wrap:wrap;color:var(--muted);font-size:13px}.hero-card{background:var(--card);border:1px solid var(--line);border-radius:30px;padding:24px;box-shadow:var(--shadow);transform:rotate(2deg)}.card-top{display:flex;justify-content:space-between;font-weight:800;margin-bottom:18px}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;text-align:center}.calendar div{padding:10px 0;border-radius:12px;font-size:13px}.calendar .head{color:var(--muted);font-size:11px}.calendar .sel{background:var(--accent);color:#fff;font-weight:800}.slot-highlight{display:flex;justify-content:space-between;align-items:center;background:var(--dark);color:#fff;border-radius:17px;padding:15px 16px;margin-top:16px}.slot-highlight span{opacity:.65}
+.section{padding:68px 0}.soft{background:var(--soft);border-block:1px solid var(--line)}.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:24px}h2{font-size:38px;line-height:1.08;letter-spacing:-.04em;margin:7px 0 0}.muted{color:var(--muted);font-size:14px}.masters{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.master{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 5px 20px rgba(48,35,27,.04)}.master-head{display:flex;gap:13px;align-items:center}.avatar{width:54px;height:54px;border-radius:17px;background:var(--soft);display:grid;place-items:center;font-weight:800;font-size:18px}.master-name{font-weight:800;font-size:18px}.service{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0;border-top:1px solid var(--line);margin-top:10px}.service:first-of-type{margin-top:18px}.service small{display:block;color:var(--muted)}.loading,.empty{padding:34px;text-align:center;border:1px dashed var(--line);border-radius:22px;color:var(--muted);grid-column:1/-1}.list{display:grid;gap:12px}.item{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px 19px}.item-row{display:flex;justify-content:space-between;gap:12px;align-items:start}.status{border-radius:999px;padding:6px 10px;background:#f2eee9;font-size:12px;font-weight:800}.status.pending{background:#fff1cb;color:#846100}.status.confirmed{background:#e6f5eb;color:#2a6b42}.status.cancelled{background:#f8e1dd;color:#98463a}.status.completed{background:#e7edf5;color:#44566a}
+.cta{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:30px;border-radius:28px;background:var(--dark);color:#fff;margin-bottom:66px}.cta p{color:#cfc5bf;margin-bottom:0}.footer{border-top:1px solid var(--line);padding:23px 0;color:var(--muted);font-size:13px}.footer-inner{display:flex;justify-content:space-between}
+.modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:18px}.backdrop{position:absolute;inset:0;background:rgba(39,30,24,.45);backdrop-filter:blur(7px)}.dialog{position:relative;z-index:1;width:min(100%,520px);max-height:90vh;overflow:auto;background:#fff;border-radius:28px;padding:27px;box-shadow:0 30px 90px rgba(0,0,0,.22)}.close{position:absolute;right:15px;top:10px;border:0;background:transparent;font-size:28px;color:var(--muted)}.dialog h2{font-size:33px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;background:var(--soft);border-radius:14px;margin:18px 0}.tab{border:0;background:transparent;padding:9px;border-radius:10px;font-weight:700;color:var(--muted)}.tab.active{background:#fff;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.05)}form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight:700}input{border:1px solid var(--line);padding:12px 13px;border-radius:13px;outline:none}input:focus{border-color:#e0a69e;box-shadow:0 0 0 4px rgba(242,109,91,.1)}.error{min-height:20px;color:#b54d41;font-size:13px;margin:0}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:13px;border-radius:17px;background:var(--soft);margin:18px 0}.summary div{display:grid;gap:3px}.summary span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.summary strong{font-size:13px}.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 16px}.slot{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 7px;font-weight:700}.slot.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toast{position:fixed;z-index:100;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--dark);color:#fff;padding:11px 17px;border-radius:999px;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:900px){.hero{grid-template-columns:1fr;gap:30px}.masters{grid-template-columns:1fr 1fr}.nav{display:none}}
+@media(max-width:620px){.wrap{width:min(100% - 22px,1120px)}.header-inner{height:60px}.hero{padding:45px 0}.hero h1{font-size:45px}.section{padding:54px 0}.masters{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}h2{font-size:33px}.summary{grid-template-columns:1fr}.slots{grid-template-columns:repeat(3,1fr)}.cta{flex-direction:column;align-items:start}.footer-inner{flex-direction:column;gap:7px}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#"><span class="logo">M</span><span>MasterBook</span></a>
+    <nav class="nav"><a href="#masters">Мастера</a><a href="#appointments">Мои записи</a><a href="#notifications">Уведомления</a></nav>
+    <div class="header-actions"><span id="user" class="user hidden"></span><button id="login" class="btn outline">Войти</button><button id="logout" class="btn dark hidden">Выйти</button></div>
+  </div>
+</header>
+
+<main>
+<section class="wrap hero">
+  <div>
+    <div class="eyebrow">онлайн-запись</div>
+    <h1>Найдите мастера. <span>Выберите время.</span> Запишитесь.</h1>
+    <p class="lead">MasterBook объединяет мастеров, услуги и свободное время в одном удобном месте.</p>
+    <div class="actions"><a class="btn primary" href="#masters">Найти мастера</a><button id="heroAuth" class="btn ghost">Войти в кабинет</button></div>
+    <div class="checks"><span>✓ свободные слоты</span><span>✓ подтверждение записи</span><span>✓ история записей</span></div>
+  </div>
+  <div class="hero-card">
+    <div class="card-top"><span>Сентябрь 2026</span><span>MasterBook</span></div>
+    <div class="calendar">
+      <div class="head">Пн</div><div class="head">Вт</div><div class="head">Ср</div><div class="head">Чт</div><div class="head">Пт</div><div class="head">Сб</div><div class="head">Вс</div>
+      <div>7</div><div>8</div><div>9</div><div class="sel">10</div><div>11</div><div>12</div><div>13</div>
+      <div>14</div><div>15</div><div>16</div><div>17</div><div>18</div><div>19</div><div>20</div>
+    </div>
+    <div class="slot-highlight"><span>Свободное время</span><strong>16:30</strong></div>
+  </div>
+</section>
+
+<section id="masters" class="section wrap">
+  <div class="section-head"><div><div class="eyebrow">каталог</div><h2>Мастера и услуги</h2></div><button id="refresh" class="btn outline">Обновить</button></div>
+  <div id="mastersGrid" class="masters"><div class="loading">Загрузка мастеров…</div></div>
+</section>
+
+<section id="appointments" class="section soft">
+  <div class="wrap"><div class="section-head"><div><div class="eyebrow">личный кабинет</div><h2>Мои записи</h2></div><span id="appointmentHint" class="muted">Войдите, чтобы увидеть записи.</span></div>
+  <div id="appointmentsList" class="list"></div></div>
+</section>
+
+<section id="notifications" class="section wrap">
+  <div class="section-head"><div><div class="eyebrow">события</div><h2>Уведомления</h2></div></div>
+  <div id="notificationsList" class="list"></div>
+</section>
+
+<section class="wrap cta"><div><div class="eyebrow">MasterBook</div><h2>Запись без лишних сообщений.</h2><p>Выберите мастера, свободное время и сохраните запись.</p></div><a class="btn primary" href="#masters">Выбрать мастера</a></section>
+</main>
+<footer class="footer"><div class="wrap footer-inner"><span>© 2026 MasterBook</span><span>Онлайн-запись к мастерам</span></div></footer>
+
+<div id="authModal" class="modal hidden"><div class="backdrop" data-close></div><div class="dialog">
+<button class="close" data-close>×</button><div class="eyebrow">личный кабинет</div><h2 id="authTitle">Вход в MasterBook</h2>
+<div class="tabs"><button class="tab active" data-tab="login">Войти</button><button class="tab" data-tab="register">Регистрация</button></div>
+<form id="loginForm"><label>Email<input name="email" type="email" required></label><label>Пароль<input name="password" type="password" required></label><p id="loginError" class="error"></p><button class="btn primary wide">Войти</button></form>
+<form id="registerForm" class="hidden"><label>Имя<input name="name" required></label><label>Email<input name="email" type="email" required></label><label>Пароль<input name="password" type="password" minlength="8" required></label><p id="registerError" class="error"></p><button class="btn primary wide">Создать аккаунт</button></form>
+</div></div>
+
+<div id="bookingModal" class="modal hidden"><div class="backdrop" data-close></div><div class="dialog">
+<button class="close" data-close>×</button><div class="eyebrow">новая запись</div><h2>Выберите время</h2>
+<div class="summary"><div><span>Мастер</span><strong id="bMaster"></strong></div><div><span>Услуга</span><strong id="bService"></strong></div><div><span>Цена</span><strong id="bPrice"></strong></div></div>
+<label>Дата<input id="bDate" type="date"></label><div class="section-head" style="margin:18px 0 8px"><strong>Свободное время</strong><span id="bState" class="muted"></span></div>
+<div id="slots" class="slots"></div><p id="bookingError" class="error"></p><button id="book" class="btn primary wide" disabled>Записаться</button>
+</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const state={token:localStorage.getItem("mb_token")||"",user:JSON.parse(localStorage.getItem("mb_user")||"null"),masters:[],booking:null,slot:null};
+const $=id=>document.getElementById(id);
+function toast(msg){const x=$("toast");x.textContent=msg;x.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>x.classList.remove("show"),2400)}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function money(v){return new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Number(v||0))+" ₽"}
+function initials(n){return String(n||"?").trim().split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase()}
+function fmt(v){return new Intl.DateTimeFormat("ru-RU",{day:"2-digit",month:"long",hour:"2-digit",minute:"2-digit"}).format(new Date(v))}
+function status(v){return ({pending:"Ожидает подтверждения",confirmed:"Подтверждена",cancelled:"Отменена",completed:"Завершена"}[v]||v)}
+async function api(path,opt={}){const headers={...(opt.headers||{})};if(opt.body)headers["Content-Type"]="application/json";if(state.token)headers.Authorization="Bearer "+state.token;const r=await fetch("/api/v1"+path,{...opt,headers});const t=await r.text();let d=null;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw new Error(d?.error||t||"Ошибка");return d}
+function modal(id,on=true){$(id).classList.toggle("hidden",!on)}
+function authTab(tab){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));$("loginForm").classList.toggle("hidden",tab!=="login");$("registerForm").classList.toggle("hidden",tab!=="register");$("authTitle").textContent=tab==="login"?"Вход в MasterBook":"Создание аккаунта"}
+function session(token,user){state.token=token||"";state.user=user||null;if(token)localStorage.setItem("mb_token",token);else localStorage.removeItem("mb_token");if(user)localStorage.setItem("mb_user",JSON.stringify(user));else localStorage.removeItem("mb_user");renderHeader()}
+function logout(){session("",null);renderAppointments();renderNotifications();toast("Вы вышли из аккаунта")}
+function renderHeader(){const ok=!!(state.token&&state.user);$("login").classList.toggle("hidden",ok);$("heroAuth").classList.toggle("hidden",ok);$("logout").classList.toggle("hidden",!ok);$("user").classList.toggle("hidden",!ok);$("user").textContent=ok?state.user.name:"";$("appointmentHint").textContent=ok?"История ваших записей с текущим статусом.":"Войдите, чтобы увидеть записи."}
+async function restore(){if(!state.token)return;try{const u=await api("/me");session(state.token,u)}catch{logout()}}
+async function loadMasters(){const g=$("mastersGrid");g.innerHTML='<div class="loading">Загрузка мастеров…</div>';try{const ms=await api("/masters");state.masters=await Promise.all(ms.map(async m=>({...m,services:await api("/masters/"+m.id+"/services")})));if(!state.masters.length){g.innerHTML='<div class="empty">Мастеров пока нет.</div>';return}g.innerHTML=state.masters.map(m=>`<article class="master"><div class="master-head"><div class="avatar">${initials(m.name)}</div><div><div class="master-name">${esc(m.name)}</div><div class="muted">${esc(m.description||"Мастер")}</div></div></div>${m.services.map(s=>`<div class="service"><div><strong>${esc(s.name)}</strong><small>${s.duration_minutes} мин · ${money(s.price)}</small></div><button class="btn outline" data-master="${m.id}" data-service="${s.id}">Выбрать</button></div>`).join("")}</article>`).join("")}catch(e){g.innerHTML='<div class="loading">Не удалось загрузить мастеров.</div>';toast(e.message)}}
+function today(){const d=new Date();return d.toISOString().slice(0,10)}
+async function openBooking(mid,sid){if(!state.token){authTab("login");modal("authModal");toast("Сначала войдите или зарегистрируйтесь");return}const m=state.masters.find(x=>Number(x.id)===Number(mid));const s=m?.services?.find(x=>Number(x.id)===Number(sid));if(!m||!s)return;state.booking={m,s};state.slot=null;$("bMaster").textContent=m.name;$("bService").textContent=s.name;$("bPrice").textContent=money(s.price);$("bookingError").textContent="";$("bDate").min=today();$("bDate").value=today();$("book").disabled=true;modal("bookingModal");await loadSlots()}
+async function loadSlots(){if(!state.booking)return;state.slot=null;$("book").disabled=true;const date=$("bDate").value;$("bState").textContent="Загрузка…";$("slots").innerHTML='<div class="loading">Загрузка времени…</div>';try{const slots=await api("/masters/"+state.booking.m.id+"/availability?date="+encodeURIComponent(date));$("bState").textContent=date;if(!slots.length){$("slots").innerHTML='<div class="empty">На эту дату свободных слотов нет.</div>';return}$("slots").innerHTML=slots.map(s=>{const d=new Date(s.start_time);const t=d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});return`<button class="slot" data-slot="${s.start_time}">${t}</button>`}).join("")}catch(e){$("bState").textContent="";$("bookingError").textContent=e.message}}
+async function book(){if(!state.slot||!state.booking)return;$("book").disabled=true;try{await api("/appointments",{method:"POST",body:JSON.stringify({master_id:Number(state.booking.m.id),service_id:Number(state.booking.s.id),start_time:state.slot})});modal("bookingModal",false);toast("Запись создана");await Promise.all([renderAppointments(),renderNotifications()]);location.hash="appointments"}catch(e){$("bookingError").textContent=e.message}finally{$("book").disabled=!state.slot}}
+async function renderAppointments(){const box=$("appointmentsList");if(!state.token){box.innerHTML='<div class="empty">Войдите в аккаунт, чтобы увидеть записи.</div>';return}try{const a=await api("/appointments");if(!a.length){box.innerHTML='<div class="empty">Записей пока нет.</div>';return}box.innerHTML=a.map(x=>`<article class="item"><div class="item-row"><div><strong>${esc(x.service_name)}</strong><div class="muted">${esc(x.master_name)} · ${fmt(x.start_time)}</div></div><span class="status ${esc(x.status)}">${status(x.status)}</span></div>${["pending","confirmed"].includes(x.status)?`<button class="btn outline" style="margin-top:12px" data-cancel="${x.id}">Отменить</button>`:""}</article>`).join("")}catch(e){box.innerHTML='<div class="empty">Не удалось загрузить записи.</div>'}}
+async function cancel(id){if(!confirm("Отменить запись?"))return;try{await api("/appointments/"+id+"/cancel",{method:"PATCH"});toast("Запись отменена");await renderAppointments()}catch(e){toast(e.message)}}
+async function renderNotifications(){const box=$("notificationsList");if(!state.token){box.innerHTML='<div class="empty">Войдите, чтобы увидеть уведомления.</div>';return}try{const n=await api("/notifications");if(!n.length){box.innerHTML='<div class="empty">Уведомлений нет.</div>';return}box.innerHTML=n.map(x=>`<article class="item" style="${x.is_read?"":"border-color:#efb1a8"}"><div class="item-row"><div><strong>${esc(x.title)}</strong><div class="muted">${fmt(x.created_at)}</div></div></div><p>${esc(x.message)}</p>${x.is_read?"":`<button class="btn outline" data-read="${x.id}">Отметить прочитанным</button>`}</article>`).join("")}catch(e){box.innerHTML='<div class="empty">Не удалось загрузить уведомления.</div>'}}
+async function read(id){try{await api("/notifications/"+id+"/read",{method:"PATCH"});renderNotifications()}catch(e){toast(e.message)}}
+async function me(token){const r=await fetch("/api/v1/me",{headers:{Authorization:"Bearer "+token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Ошибка профиля");return d}
+async function doLogin(email,password){const d=await api("/auth/login",{method:"POST",body:JSON.stringify({email,password})});session(d.access_token,await me(d.access_token));modal("authModal",false);toast("Вход выполнен");renderAppointments();renderNotifications()}
+async function doRegister(name,email,password){await api("/auth/register",{method:"POST",body:JSON.stringify({name,email,password})});await doLogin(email,password)}
+
+document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.close!==undefined){modal("authModal",false);modal("bookingModal",false)}if(b.id==="login"||b.id==="heroAuth"){authTab("login");modal("authModal")}if(b.id==="logout")logout();if(b.dataset.tab)authTab(b.dataset.tab);if(b.id==="refresh")loadMasters();if(b.dataset.master)openBooking(b.dataset.master,b.dataset.service);if(b.dataset.slot){document.querySelectorAll(".slot").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");state.slot=b.dataset.slot;$("book").disabled=false}if(b.dataset.cancel)cancel(b.dataset.cancel);if(b.dataset.read)read(b.dataset.read);});
+$("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginError").textContent="";const f=new FormData(e.currentTarget);try{await doLogin(String(f.get("email")),String(f.get("password")));e.currentTarget.reset()}catch(x){$("loginError").textContent=x.message}});
+$("registerForm").addEventListener("submit",async e=>{e.preventDefault();$("registerError").textContent="";const f=new FormData(e.currentTarget);try{await doRegister(String(f.get("name")),String(f.get("email")),String(f.get("password")));e.currentTarget.reset()}catch(x){$("registerError").textContent=x.message}});
+$("bDate").addEventListener("change",loadSlots);$("book").addEventListener("click",book);
+window.addEventListener("keydown",e=>{if(e.key==="Escape"){modal("authModal",false);modal("bookingModal",false)}});
+
+(async()=>{renderHeader();await restore();await loadMasters();await Promise.all([renderAppointments(),renderNotifications()])})();
+</script>
+</body>
+</html>
