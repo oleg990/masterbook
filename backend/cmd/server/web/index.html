@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MasterBook</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="/">MasterBook</a>
+      <nav id="nav"></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="auth-view" class="grid two">
+      <div class="card">
+        <h1>Онлайн-запись</h1>
+        <p class="muted">Веб-версия MasterBook для клиентов и мастеров.</p>
+        <div id="auth-status"></div>
+      </div>
+      <div class="card">
+        <div class="tabs">
+          <button class="tab active" data-tab="login">Вход</button>
+          <button class="tab" data-tab="register">Регистрация</button>
+        </div>
+        <form id="login-form" class="form">
+          <label>Email<input name="email" type="email" required></label>
+          <label>Пароль<input name="password" type="password" required></label>
+          <button class="primary">Войти</button>
+        </form>
+        <form id="register-form" class="form hidden">
+          <label>Имя<input name="name" required></label>
+          <label>Email<input name="email" type="email" required></label>
+          <label>Пароль<input name="password" type="password" minlength="8" required></label>
+          <button class="primary">Создать аккаунт</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="app-view" class="hidden">
+      <div id="flash"></div>
+      <div class="grid two">
+        <section id="client-section" class="card">
+          <div class="section-head"><h2>Мастера</h2><button id="refresh-client" class="secondary">Обновить</button></div>
+          <div id="masters" class="list"></div>
+        </section>
+        <section class="card">
+          <div class="section-head"><h2>Мои записи</h2><button id="refresh-appointments" class="secondary">Обновить</button></div>
+          <div class="tabs" id="appointments-tabs">
+            <button class="tab active" data-status-tab="active">Активные</button>
+            <button class="tab" data-status-tab="cancelled">Отменённые</button>
+            <button class="tab" data-status-tab="completed">Выполненные</button>
+            <button class="tab" data-status-tab="archived">Архивные</button>
+          </div>
+          <div id="appointments" class="list"></div>
+        </section>
+      </div>
+
+      <section id="booking-card" class="card hidden">
+        <div class="section-head"><h2>Новая запись</h2><button id="close-booking" class="secondary">Закрыть</button></div>
+        <div id="selected-master" class="muted"></div>
+        <div class="grid two">
+          <label>Услуга<select id="service-select"></select></label>
+          <label>Дата<input id="date-input" type="date"></label>
+        </div>
+        <div id="slots" class="slots"></div>
+      </section>
+
+      <section id="master-section" class="card hidden">
+        <div class="section-head"><h2>Кабинет мастера</h2><button id="refresh-master" class="secondary">Обновить</button></div>
+        <div class="grid two">
+          <form id="profile-form" class="form">
+            <h3>Профиль</h3>
+            <label>Описание<textarea name="description" rows="4"></textarea></label>
+            <label>Фото URL<input name="photo_url"></label>
+            <button class="primary">Сохранить профиль</button>
+          </form>
+          <form id="avatar-form" class="form">
+            <h3>Аватар</h3>
+            <label>Файл<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required></label>
+            <button class="primary">Загрузить аватар</button>
+          </form>
+          <form id="service-form" class="form">
+            <h3>Новая услуга</h3>
+            <label>Название<input name="name" required></label>
+            <label>Описание<textarea name="description" rows="3"></textarea></label>
+            <label>Цена<input name="price" type="number" min="0" step="0.01" required></label>
+            <label>Длительность, мин<input name="duration_minutes" type="number" min="1" required></label>
+            <button class="primary">Добавить услугу</button>
+          </form>
+        </div>
+        <div class="grid two">
+          <form id="schedule-form" class="form">
+            <h3>Рабочий день</h3>
+            <label>День недели<select name="day_of_week"><option value="1">Пн</option><option value="2">Вт</option><option value="3">Ср</option><option value="4">Чт</option><option value="5">Пт</option><option value="6">Сб</option><option value="7">Вс</option></select></label>
+            <div class="grid two"><label>Начало<input name="start_time" type="time" required></label><label>Конец<input name="end_time" type="time" required></label></div>
+            <button class="primary">Сохранить график</button>
+          </form>
+          <div>
+            <h3>Мои записи как мастера</h3>
+            <div class="tabs" id="master-appointments-tabs">
+              <button class="tab active" data-status-tab="active">Активные</button>
+              <button class="tab" data-status-tab="cancelled">Отменённые</button>
+              <button class="tab" data-status-tab="completed">Выполненные</button>
+              <button class="tab" data-status-tab="archived">Архивные</button>
+            </div>
+            <div id="master-appointments" class="list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="admin-section" class="card hidden">
+        <div class="section-head"><h2>Кабинет администратора</h2></div>
+        <form id="admin-create-master-form" class="form">
+          <h3>Новый мастер</h3>
+          <div class="grid two">
+            <label>Имя<input name="name" required></label>
+            <label>Email<input name="email" type="email" required></label>
+            <label>Пароль<input name="password" type="password" minlength="8" required></label>
+            <label>Фото URL<input name="photo_url"></label>
+          </div>
+          <label>Описание<textarea name="description" rows="2"></textarea></label>
+          <button class="primary">Создать мастера</button>
+        </form>
+
+        <label>Редактируемый мастер
+          <select id="admin-master-select"><option value="">— выберите мастера —</option></select>
+        </label>
+
+        <div id="admin-master-area" class="hidden">
+          <div class="grid two">
+            <form id="admin-profile-form" class="form">
+              <h3>Профиль</h3>
+              <label>Описание<textarea name="description" rows="4"></textarea></label>
+              <label>Фото URL<input name="photo_url"></label>
+              <button class="primary">Сохранить профиль</button>
+            </form>
+            <form id="admin-service-form" class="form">
+              <h3 id="admin-service-form-title">Новая услуга</h3>
+              <input type="hidden" name="service_id">
+              <label>Название<input name="name" required></label>
+              <label>Описание<textarea name="description" rows="3"></textarea></label>
+              <label>Цена<input name="price" type="number" min="0" step="0.01" required></label>
+              <label>Длительность, мин<input name="duration_minutes" type="number" min="1" required></label>
+              <div class="actions">
+                <button class="primary">Сохранить услугу</button>
+                <button type="button" id="admin-service-cancel-edit" class="secondary hidden">Отменить редактирование</button>
+              </div>
+            </form>
+          </div>
+          <div>
+            <h3>Услуги мастера</h3>
+            <div id="admin-services" class="list"></div>
+          </div>
+          <div class="grid two">
+            <form id="admin-schedule-form" class="form">
+              <h3>Рабочий день</h3>
+              <label>День недели<select name="day_of_week"><option value="1">Пн</option><option value="2">Вт</option><option value="3">Ср</option><option value="4">Чт</option><option value="5">Пт</option><option value="6">Сб</option><option value="7">Вс</option></select></label>
+              <div class="grid two"><label>Начало<input name="start_time" type="time" required></label><label>Конец<input name="end_time" type="time" required></label></div>
+              <button class="primary">Сохранить график</button>
+            </form>
+            <div>
+              <h3>График мастера</h3>
+              <div id="admin-schedule" class="list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-head"><h2>Уведомления</h2><button id="refresh-notifications" class="secondary">Обновить</button></div>
+        <div id="notifications" class="list"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

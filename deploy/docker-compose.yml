@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: masterbook-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: masterbook
+      POSTGRES_USER: masterbook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - masterbook-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masterbook -d masterbook"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - masterbook-network
+
+  migrate:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: masterbook-migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://masterbook:${POSTGRES_PASSWORD}@postgres:5432/masterbook?sslmode=disable
+    command: ["./masterbook-migrate"]
+    networks:
+      - masterbook-network
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: masterbook-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      HTTP_PORT: 8080
+      DATABASE_URL: postgres://masterbook:${POSTGRES_PASSWORD}@postgres:5432/masterbook?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    networks:
+      - masterbook-network
+
+networks:
+  masterbook-network:
+    name: masterbook-network
+
+volumes:
+  masterbook-postgres-data:
+    name: masterbook-postgres-data

@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: masterbook-postgres-dev
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: masterbook
+      POSTGRES_USER: masterbook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    volumes:
+      - masterbook-postgres-dev-data:/var/lib/postgresql/data
+
+    networks:
+      - masterbook-dev-network
+
+networks:
+  masterbook-dev-network:
+    name: masterbook-dev-network
+
+volumes:
+  masterbook-postgres-dev-data:
+    name: masterbook-postgres-dev-data
